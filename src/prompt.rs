@@ -322,7 +322,7 @@ pub fn main(data: Sender<Input>, control: Receiver<Control>)
                         }
                         Err(e) => Err(e)?,
                     };
-                    match var_type.parse(&text) {
+                    match var_type.parse(&text, true) {
                         Ok(value) => break (text, value),
                         Err(e) => {
                             println!("Bad value: {}", e);

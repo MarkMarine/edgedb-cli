@@ -66,17 +66,16 @@ pub async fn input_variables(desc: &InputTypedesc, state: &mut repl::PromptRpc)
     }
 }
 
-async fn input_item(name: &str, mut item: &Descriptor, all: &InputTypedesc,
-    state: &mut repl::PromptRpc, optional: bool)
-    -> Result<Option<Value>, anyhow::Error>
+fn make_variable_input(item: &Descriptor, all: &InputTypedesc)
+                       -> Result<Arc<dyn VariableInput>, anyhow::Error>
 {
-    match item {
+    let citem = match item {
         Descriptor::Scalar(s) => {
-            item = all.get(s.base_type_pos)?;
+            all.get(s.base_type_pos)?
         }
-        _ => {},
-    }
-    match item {
+        _ => { item },
+    };
+    match citem {
         Descriptor::BaseScalar(s) => {
             let var_type: Arc<dyn VariableInput> = match s.id {
                 codec::STD_STR => Arc::new(variable::Str),
@@ -94,19 +93,32 @@ async fn input_item(name: &str, mut item: &Descriptor, all: &InputTypedesc,
                         "Unimplemented input type {}", s.id))
             };
 
-            let val = match
-                state.variable_input(name, var_type, optional, "").await?
-            {
-                | prompt::Input::Value(val) => Some(val),
-                | prompt::Input::Text(_) => unreachable!(),
-                | prompt::Input::Interrupt => Err(Canceled)?,
-                | prompt::Input::Eof => None,
-            };
-            Ok(val)
+            Ok(var_type)
+        }
+        Descriptor::Array(s) => {
+            // XXX: dimensions
+            let elem = all.get(s.type_pos)?;
+            Ok(Arc::new(variable::Array::new(make_variable_input(elem, all)?)))
         }
         _ => Err(anyhow::anyhow!(
                 "Unimplemented input type descriptor: {:?}", item)),
     }
+}
+
+async fn input_item(name: &str, item: &Descriptor, all: &InputTypedesc,
+    state: &mut repl::PromptRpc, optional: bool)
+    -> Result<Option<Value>, anyhow::Error>
+{
+    let var_type: Arc<dyn VariableInput> = make_variable_input(item, all)?;
+    let val = match
+        state.variable_input(name, var_type, optional, "").await?
+    {
+        | prompt::Input::Value(val) => Some(val),
+        | prompt::Input::Text(_) => unreachable!(),
+        | prompt::Input::Interrupt => Err(Canceled)?,
+        | prompt::Input::Eof => None,
+    };
+    Ok(val)
 }
 
 impl Error for Canceled {
