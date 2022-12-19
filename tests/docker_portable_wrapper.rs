@@ -76,7 +76,8 @@ extern fn delete_docker_image() {
         .arg("image")
         .arg("rm")
         .arg("edgedb_test_portable")
-        .unwrap();
+        .ok()
+        .expect("docker image rm");
 }
 
 fn dockerfile() -> String {
