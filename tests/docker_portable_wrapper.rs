@@ -77,7 +77,8 @@ extern fn delete_docker_image() {
         .arg("rm")
         .arg("edgedb_test_portable")
         .ok()
-        .expect("docker image rm");
+        .err()
+        .map(|e| println!("docker image rm failed: {:?}", e));
 }
 
 fn dockerfile() -> String {
