@@ -30,6 +30,7 @@
       shell: bash
       run: |
         rev=$(git rev-parse HEAD)
+        rev=42a272f7792f6c51aedf153d8a16f0d6dbc8bb0f
         jq_filter='.packages[] | select(.basename == "edgedb-cli") | select(.architecture == $ARCH) | .version_details.metadata.scm_revision | . as $rev | select($REV | startswith($rev))'
 <% for tgt in targets.linux %>
         val=true
