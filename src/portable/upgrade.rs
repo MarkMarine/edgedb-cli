@@ -126,6 +126,7 @@ fn upgrade_local(cmd: &Upgrade, name: &str) -> anyhow::Result<()> {
               "Already up to date.");
         return Ok(());
     }
+    ver::print_version_hint(&pkg_ver, &ver_query);
 
     let inst = InstanceInfo::read(name)?;
     // When force is used we might upgrade to the same version, so
@@ -172,6 +173,7 @@ fn upgrade_cloud(cmd: &Upgrade, org: &str, name: &str, opts: &crate::options::Op
         );
         return Ok(());
     }
+    ver::print_version_hint(&target_ver, &query);
 
     let _inst_name = format!("{}/{}", org, name);
     let inst_name = _inst_name.emphasize();
